@@ -31,7 +31,7 @@ jobs:
       - name: Retrieve data
         uses: nick-fields/retry@v3
         with:
-          timeout_seconds: 30
+          timeout_seconds: 300
           max_attempts: 3
           command: Rscript -e 'source("download-and-combine-current-wibrs.R")'
           continue_on_error: true
