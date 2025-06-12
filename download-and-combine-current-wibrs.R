@@ -35,6 +35,12 @@ wibrs.historic <- read_csv("wibr-historic-valid-location.csv.gz")
 wibrs.all <- bind_rows(wibrs.historic, wibr.valid.location)
 deduplicate <- wibrs.all |>
   group_by(IncidentNum) |>
-  slice_max(order_by = ReportedDateTime, n = 1, with_ties = F)
+  slice_max(order_by = ReportedDateTime, n = 1, with_ties = F) |>
+  ungroup()
+
+wibrs.last365 <- deduplicate |>
+  filter(between(as.Date(ReportedDateTime), max(as.Date(ReportedDateTime)) - 365,
+                 max(as.Date(ReportedDateTime))))
 
 write_csv(deduplicate, "wibrs-complete.csv.gz")
+write_csv(wibrs.last365, "wibrs-last365.csv")
