@@ -2,6 +2,7 @@ rm(list = ls())
 
 library(readr)
 library(dplyr)
+library(sf)
 
 # match current WIBRS to geocodes
 
@@ -38,9 +39,19 @@ deduplicate <- wibrs.all |>
   slice_max(order_by = ReportedDateTime, n = 1, with_ties = F) |>
   ungroup()
 
+parcel.polygons <- st_read("parcel-polygons.geojson")
+
 wibrs.last365 <- deduplicate |>
   filter(between(as.Date(ReportedDateTime), max(as.Date(ReportedDateTime)) - 365,
-                 max(as.Date(ReportedDateTime))))
+                 max(as.Date(ReportedDateTime)))) |>
+  # add TAXKEY, rough match
+  st_as_sf(coords = c("final_x","final_y"), crs = 32054, remove = FALSE) |>
+  st_join(parcel.polygons) |>
+  st_drop_geometry() |>
+  group_by(IncidentNum) |>
+  filter(row_number() == 1) |>
+  ungroup() |>
+  rename(fuzzy_TAXKEY = TAXKEY)
 
 write_csv(deduplicate, "wibrs-complete.csv.gz")
 write_csv(wibrs.last365, "wibrs-last365.csv")
